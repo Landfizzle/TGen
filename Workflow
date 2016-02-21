@@ -1,2 +1,0 @@
-2/8/2016 
-After looking at Core NLP for awhile, I'm taking a break from that aspect of the program. Core NLP is A) not JavaScript B) not a database and C) not an easy to use API. If I can't automatically identify the parts of speech, it might make TGen unmarketable, but I can still display the premise. I think.
