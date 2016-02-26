@@ -1,6 +1,6 @@
 var theSentence,
 	//temporary dummy variable so I don't have to keep calling the API
-	wordsInSentence = [],
+	//wordsInSentence = [],
 		/*[{
 			"position": 0,
 			"word": "the",
@@ -132,8 +132,6 @@ function begin() {
 	optionD=undefined;
 	
 	//Clear DOM
-	document.getElementById("stem").innerHTML = "&nbsp";
-	
 	document.getElementById("optionA").innerHTML = "(A)";
 	document.getElementById("optionB").innerHTML = "(B)";
 	document.getElementById("optionC").innerHTML = "(C)";
@@ -153,18 +151,21 @@ function begin() {
 	formatTheSentence(theSentence);
 }
 	
-function formatTheSentence(theSentence) {
+function formatTheSentence(sentence) {
 
 	
 	//console.log("formatTheSentence called\n");
 	
 	//I need to create a check for bad sentences
 	
-	var theSentence = theSentence, placeHolder = "", pattern = /[a-z\s]/;
+	var 
+	theSentence = sentence.toLowerCase().split(""), 
+	placeHolder = "",
+	newArray = [],
+	pattern = /[a-z\s]/;
 	
-	theSentence = theSentence.toLowerCase();
 	
-	theSentence = theSentence.split("");
+
 
 	//remove punctuation, looping by letter
 	for(var i = 0; i < theSentence.length; i++) {
@@ -174,14 +175,14 @@ function formatTheSentence(theSentence) {
 	}
 		
 	theSentence = placeHolder;
-	
+	console.log(theSentence);
 	//build an array with the values I need for each word {word: frequency: part: position:}
 	
 	theSentence = theSentence.split(" ");
 	////console.log(theSentence);
 	//looping by word
 	for(var i = 0; i < theSentence.length; i++) {
-		wordsInSentence.push(
+		newArray.push(
 			{"position": i,
 			"word": theSentence[i],
 			"onlynoun": true,
@@ -192,7 +193,8 @@ function formatTheSentence(theSentence) {
 	}
 	//if(!badSentenceFlag)
 
-	requestDataOnWords(wordsInSentence);	
+	//requestDataOnWords(wordsInSentence);	
+	return newArray;
 	
 	//skipping the API step to save my quota =)
 	//assignDataToWord(dummyData, wordsInSentence);
@@ -214,7 +216,7 @@ function requestDataOnWords(array) {//Currently only retrieving frequency. I sti
 			type: 'GET', // The HTTP Method, can be GET POST PUT DELETE etc
 			data: {}, // Additional parameters here
 			dataType: 'json',
-			success: function(data) {assignDataToWord(data, array);},
+			success: function(data) {	assignDataToWord(data, array);},
 			error: function(err) { alert(err); },
 			beforeSend: function(xhr) {
 			xhr.setRequestHeader("X-Mashape-Authorization", "ahIVxzexrJmshIjB3DsqKwyiNQUpp1ZgepCjsnXfyo2BHPrC5m"); // Enter here your Mashape key
