@@ -4,6 +4,328 @@ const WORDNIK_API_KEY = "1706e28b8263086fd200e031a760a3d2c64f01948c34d3499";
 
 //Results retrieved from ^^ on 2/26/16
 
+var wordsInSentence = [],
+	sentenceListIndex = 0,
+	theList = [],
+	sentenceToTest = "Incandiferous",
+	theAnswer = {"position":12,
+		"word":"indecision",
+		"onlynoun":true,
+		"frequency":64,
+		"frequencyreturned":true,
+		"onlynounreturned":true,
+		"theanswer":true};
+		
+var findAnswerCalled = false;
+
+function mouseClick() {
+	
+	update("status", sentenceListIndex);
+	
+	if(sentenceListIndex == 0) {
+		getSentences();
+	}  else {
+		clearScreen();
+		findSentence(theList);
+	}
+	
+}
+
+function begin() {
+	clearScreen();
+	
+	
+	getSentences();
+	
+}
+		
+function getSentences () {
+	//NYT most popular from today
+	var url = "http://api.nytimes.com/svc/mostpopular/v2/mostviewed/all-sections/7.json?api-key=458160046a89adbe1794a152b13ef268:10:67481050";
+	
+	getData(url, buildListOfSentences);
+
+} 
+
+function buildListOfSentences(source) {
+	console.log("buildListOfSentences() called with: " + source);
+	
+	theList = [];
+	
+	source.results.forEach(function(item, index) {
+		theList.push(item.abstract);
+	});
+	
+	if(theList!=undefined) {findSentence(theList);} else {alert("theList is empty");}
+	
+	console.log(theList);
+}
+
+function findSentence(listOfSentences) {
+	console.log("findSentence called with: " + listOfSentences);
+		
+	var theSentence = listOfSentences[sentenceListIndex];
+	
+	clearScreen();
+	
+	sentenceListIndex++;
+	//check if it is one sentence and lacks excess punctuation. return false if so,array if its usable		
+	if(canUseSentence(theSentence)) {
+		//Convert my sentence into a form compatible with the Wordnik API
+		sentenceToTest = theSentence;
+		format(theSentence);
+		//attach metadata to the sentence (Frequency, onlynoun)
+		assignDataToWords(wordsInSentence);
+		return;} 
+		else {
+			console.log("sentence unusable, trying again");
+			
+			findSentence(listOfSentences);
+	}
+}
+
+
+
+function format(sentence) {
+	console.log("format() called with: " + sentence)
+	//Return an array of objects. Each object contains the word and important info about it
+	
+	//Turn it into an array
+	wordsInSentence = sentence.split(" ");
+	
+	//Turn each item into an object
+	wordsInSentence.forEach(function(item, index) {
+			wordsInSentence[index] = {"position": index,
+			"word": item,
+			"onlynoun": true,
+			"frequency": 0,
+			"frequencyreturned": false,
+			"onlynounreturned": false,
+			"theanswer": false
+	}});
+	
+		//Punctuation handling on the Wordnik API is inconsistent. I can't just strip off all the punctuation, so these checks should fix those inconsistencies. The trickiest cases are apostrophes. Possessive apostrophes are not returned and can render a word unreadable by the API, and contracting apostrophes are necessary to identify the word. (Compare "party's" and "won't") 
+		
+		
+	
+	//Remove commas
+	wordsInSentence.forEach(function(item, index) {
+		
+		var theWord = item.word;
+		
+		for(var i = 0;i < theWord.length; i ++) {
+			if(theWord.charAt(i) == ",") {theWord = theWord.replace(",","");}
+		}
+			
+		wordsInSentence[index].word = theWord;
+		
+	})	;
+	
+	//Remove the final period. Because I already ruled out using any sentences that might end in ! or ? I can just assume theres a period at the end. The other periods will be for titles and abbreviations, and I can keep those.
+	wordsInSentence[wordsInSentence.length-1].word = wordsInSentence[wordsInSentence.length-1].word.replace(".","");
+	
+	//Apostrophes and capitals. I'm just going to get rid of any word with an apostrophe. I believe my original solution was correct but incompatible with inconsistent results from Wordnik
+		
+	wordsInSentence = wordsInSentence.filter(function(item) {
+		var pattern = new RegExp("[’A-Z]");
+		if(!pattern.test(item.word)) {return item}
+	});
+
+}
+
+//One function to make all the API calls for necessary word info. (Frequency and if it is only a noun)
+
+function assignDataToWords(array) {
+	console.log("assignDataToWords called with " + array);
+	
+	//Get frequency. Im calling this with canonical turned off because  "pushed" != "push" and it causes problems with the checks. If I fixed that it would make it more accurate, though
+	for(var i = 0; i < wordsInSentence.length; i ++) {
+		var url = 
+		"http://api.wordnik.com:80/v4/word.json/" + 
+		wordsInSentence[i].word + 
+		"/frequency?useCanonical=false&startYear=1960&endYear=2012&api_key=" + 
+		WORDNIK_API_KEY;
+
+		getData(url, assignFrequency);
+	}
+	
+
+	//Figure out if the word is only a noun 
+	for(var i = 0; i < wordsInSentence.length; i ++) {
+		
+		var url = 
+		"http://api.wordnik.com:80/v4/word.json/" + 
+		wordsInSentence[i].word + 		"/definitions?limit=200&includeRelated=false&sourceDictionaries=wiktionary&useCanonical=false&includeTags=false&api_key=" + 
+		WORDNIK_API_KEY;
+
+		getData(url, assignOnlyNoun);
+	}
+	
+}
+
+function canUseSentence(string) {
+	console.log("canUseSentence called with: " + string);
+	var theLetters = string.toLowerCase().split(""),
+		theWords = format(string),
+		pattern = pattern = /[a-z.\s\,\’]/,
+		canUseIt = true;
+	
+	for(var i = 0; i < theLetters.length; i++) {
+		//Does it have punctuation besides ' , or .
+		if(!pattern.test(theLetters[i])) {return false;}
+		
+		//Is it one sentence? (Are there titles like "Mr." or abbreviated acronyms?)
+		//Doesn't catch "Mrs" because its three letters
+		if(theLetters[i] == "." && i != theLetters.length-1) {
+			var title = theLetters[i-2] + theLetters[i-1];
+			if(title !="mr" && title != "ms" && title != "dr") {
+
+				return false;
+			}
+		}
+	}
+		
+
+	return true;	
+	
+}
+
+function assignFrequency(data) {
+	console.log("createArray called (Probably because data was returned)");
+	var array = wordsInSentence;
+			
+	for (var i = 0; i < array.length; i++) {
+			
+		if(array[i].word == data.word) {
+			
+			array[i].frequencyreturned = true;
+			array[i].frequency = data.totalCount;
+			
+		}
+	
+		//check if all the results are in
+		var allReturned = true;
+
+		for (var u = 0; u < array.length; u++) {
+			if (array[u].frequencyreturned == false) {allReturned = false;}
+		}
+						
+	}
+	
+	if(allReturned) {sentenceComplete(wordsInSentence);}
+}
+
+function assignOnlyNoun(data) {
+	console.log("assignOnlyNoun called with: " + data[0].word);
+	
+	var array = wordsInSentence;
+	
+	array.forEach(function(arrayitem, arrayindex) {
+		
+		//make sure the result is not empty (Setup "else")
+		if(data[0]!=undefined&&data[0].word!=undefined) {
+			
+			//match the word in the sentence to the server response
+			if(array[arrayindex].word == data[0].word) {
+			
+				//flip the "returned" indicator to help signal when all results are returned
+				array[arrayindex].onlynounreturned = true;
+				
+				//go through data.results to check if the word is only a noun
+				data.forEach(function(dataitem, dataindex) {
+					if(data[dataindex].partOfSpeech!="noun") {
+						array[arrayindex].onlynoun = false;
+					}
+				});		
+			}
+		} else console.log("data[0] or data[0].word is undefined");
+
+	});
+	
+		//check if all the results are in
+		var allReturned = true;
+
+		for (var u = 0; u < array.length; u++) {
+
+			if (array[u].onlynounreturned == false) {allReturned = false;}
+			
+		}
+						
+	
+	
+	if(allReturned) {sentenceComplete(wordsInSentence);}
+}
+
+function getData(url, callback, optional) {
+
+			//migrate to Wordnik
+			console.log("getData called from: " + url + "\n with callback: " + callback);
+			var 
+			xhr = new XMLHttpRequest(),
+			data;
+			
+			xhr.open("GET", url, true);
+			xhr.send();
+			
+			xhr.onreadystatechange = function() {
+				if(xhr.readyState==4 && xhr.status==200) {
+					callback(JSON.parse(xhr.responseText), optional)
+				}			
+				if(xhr.readyState==4 && xhr.status!=200) {
+					alert("x");
+				}						
+			}
+	
+}
+
+function sentenceComplete(array) {
+	var allReturned = true;
+	//check if frequency and onlynoun are returned
+	for(var i = 0; i < array.length; i++) {
+		if(array[i].frequencyreturned == false || 
+			array[i].onlynounreturned == false) {
+				allReturned = false;}
+	}
+	
+	if(allReturned && !findAnswerCalled) {
+		findAnswerCalled = true;
+		findAnswer(array);}
+	
+}
+
+function findAnswer(array) {
+	var lowestFrequency = 100000,
+		rarestWord = "incandiferous";
+		
+	for(var i = 0; i < array.length; i ++) {
+		if(array[i].frequency < lowestFrequency && array[i].onlynoun) {
+			rarestWord = array[i].word;
+			lowestFrequency = array[i].frequency;
+		}		
+	}
+	
+	for(var i = 0; i < array.length; i ++) {
+		if(array[i].word == rarestWord) {
+			array[i].theanswer = true;
+			theAnswer = array[i];
+		}		
+	}
+	
+	//At this point the array is done. I have the word that should be tested.
+	console.log("Everythings done! ");
+	
+	sentenceToTest = sentenceToTest.replace(theAnswer.word, "-------");
+	document.getElementById("stem").innerHTML = sentenceToTest;
+	
+	//Move on to finding distractors
+	findDistractors(theAnswer);
+}
+
+//Update a DOM element
+function update(name, toDisplay) {
+	document.getElementById(name).innerHTML = toDisplay;
+}
+//Keeping this to return in the (unlikely) event that 
 var dummyData = {
 	"status" : "OK",
 	"copyright" : "Copyright (c) 2016 The New York Times Company. All Rights Reserved.",
@@ -1521,300 +1843,3 @@ var dummyData = {
 		}
 	]
 };
-
-var wordsInSentence = [],
-	sentenceToTest = "Incandiferous",
-	theAnswer = {"position":12,
-		"word":"indecision",
-		"onlynoun":true,
-		"frequency":64,
-		"frequencyreturned":true,
-		"onlynounreturned":true,
-		"theanswer":true};
-		
-var findAnswerCalled = false;
-
-function begin() {
-	clearScreen ();
-	
-	getSentences();
-	
-}
-		
-function getSentences () {
-	//NYT most popular from today
-	var url = "http://api.nytimes.com/svc/mostpopular/v2/mostviewed/all-sections/1.json?api-key=458160046a89adbe1794a152b13ef268:10:67481050";
-	
-	getData(url, findSentence);
-	/*var xhttp = new XMLHttpRequest();
-	
-	xhttp.open("GET", url, true);
-	xhttp.send();
-	
-	xhttp.onreadystatechange = function() {
-		if(xhttp.readyState == 4 && xhttp.status == 200) {
-			document.getElementById("stem").innerHTML = xhttp.responseText;
-		}
-	}*/
-} 
-
-function findSentence(source) {
-	console.log("findSentence called with: " + source);
-	for(var i = 0; i < source.results.length; i++) {
-		var theSentence = source.results[i].abstract;
-		
-		//check if it is one sentence and lacks excess punctuation. return false if so,array if its usable		
-		if(canUseSentence(theSentence)) {
-			//Convert my sentence into a form compatible with the Wordnik API
-			sentenceToTest = theSentence;
-			format(theSentence);
-			//attach metadata to the sentence (Frequency, onlynoun)
-			assignDataToWords(wordsInSentence);
-			return;} 
-			else {
-				console.log("sentence unusable");
-		}
-	}
-	
-		//var theSentence = source;
-		//console.log(theSentence);
-		
-
-		
-		
-}
-
-function format(sentence) {
-	console.log("format() called with: " + sentence)
-	//Return an array of objects. Each object contains the word and important info about it
-	
-	//Turn it into an array
-	wordsInSentence = sentence.split(" ");
-	
-	//Turn each item into an object
-	wordsInSentence.forEach(function(item, index) {
-			wordsInSentence[index] = {"position": index,
-			"word": item,
-			"onlynoun": true,
-			"frequency": 0,
-			"frequencyreturned": false,
-			"onlynounreturned": false,
-			"theanswer": false
-	}});
-	
-		//Punctuation handling on the Wordnik API is inconsistent. I can't just strip off all the punctuation, so these checks should fix those inconsistencies. The trickiest cases are apostrophes. Possessive apostrophes are not returned and can render a word unreadable by the API, and contracting apostrophes are necessary to identify the word. (Compare "party's" and "won't") 
-		
-		
-	
-	//Remove commas
-	wordsInSentence.forEach(function(item, index) {
-		
-		var theWord = item.word;
-		
-		for(var i = 0;i < theWord.length; i ++) {
-			if(theWord.charAt(i) == ",") {theWord = theWord.replace(",","");}
-		}
-			
-		wordsInSentence[index].word = theWord;
-		
-	})	;
-	
-	//Remove the final period. Because I already ruled out using any sentences that might end in ! or ? I can just assume theres a period at the end. The other periods will be for titles and abbreviations, and I can keep those.
-	wordsInSentence[wordsInSentence.length-1].word = wordsInSentence[wordsInSentence.length-1].word.replace(".","");
-	
-	//Apostrophes and capitals. I'm just going to get rid of any word with an apostrophe. I believe my original solution was correct but incompatible with inconsistent results from Wordnik
-		
-	wordsInSentence = wordsInSentence.filter(function(item) {
-		var pattern = new RegExp("[’A-Z]");
-		if(!pattern.test(item.word)) {return item}
-	});
-
-}
-
-//One function to make all the API calls for necessary word info. (Frequency and if it is only a noun)
-
-function assignDataToWords(array) {
-	console.log("assignDataToWords called with " + array);
-	
-	//Get frequency. Im calling this with canonical turned off because  "pushed" != "push" and it causes problems with the checks. If I fixed that it would make it more accurate, though
-	for(var i = 0; i < wordsInSentence.length; i ++) {
-		var url = 
-		"http://api.wordnik.com:80/v4/word.json/" + 
-		wordsInSentence[i].word + 
-		"/frequency?useCanonical=false&startYear=1960&endYear=2012&api_key=" + 
-		WORDNIK_API_KEY;
-
-		getData(url, assignFrequency);
-	}
-	
-
-	//Figure out if the word is only a noun 
-	for(var i = 0; i < wordsInSentence.length; i ++) {
-		
-		var url = 
-		"http://api.wordnik.com:80/v4/word.json/" + 
-		wordsInSentence[i].word + 		"/definitions?limit=200&includeRelated=false&sourceDictionaries=wiktionary&useCanonical=false&includeTags=false&api_key=" + 
-		WORDNIK_API_KEY;
-
-		getData(url, assignOnlyNoun);
-	}
-	
-}
-
-function canUseSentence(string) {
-	console.log("canUseSentence called with: " + string);
-	var theLetters = string.toLowerCase().split(""),
-		theWords = format(string),
-		pattern = pattern = /[a-z.\s\,\’]/,
-		canUseIt = true;
-	
-	for(var i = 0; i < theLetters.length; i++) {
-		//Does it have punctuation besides ' , or .
-		if(!pattern.test(theLetters[i])) {return false;}
-		
-		//Is it one sentence? (Are there titles like "Mr." or abbreviated acronyms?)
-		//Doesn't catch "Mrs" because its three letters
-		if(theLetters[i] == "." && i != theLetters.length-1) {
-			var title = theLetters[i-2] + theLetters[i-1];
-			if(title !="mr" && title != "ms" && title != "dr") {
-
-				return false;
-			}
-		}
-	}
-		
-
-	return true;	
-	
-}
-
-function assignFrequency(data) {
-	console.log("createArray called (Probably because data was returned)");
-	var array = wordsInSentence;
-			
-	for (var i = 0; i < array.length; i++) {
-			
-		if(array[i].word == data.word) {
-			
-			array[i].frequencyreturned = true;
-			array[i].frequency = data.totalCount;
-			
-		}
-	
-		//check if all the results are in
-		var allReturned = true;
-
-		for (var u = 0; u < array.length; u++) {
-			if (array[u].frequencyreturned == false) {allReturned = false;}
-		}
-						
-	}
-	
-	if(allReturned) {sentenceComplete(wordsInSentence);}
-}
-
-function assignOnlyNoun(data) {
-	console.log("assignOnlyNoun called with: " + data[0].word);
-	
-	var array = wordsInSentence;
-	
-	array.forEach(function(arrayitem, arrayindex) {
-		
-		//make sure the result is not empty (Setup "else")
-		if(data[0]!=undefined&&data[0].word!=undefined) {
-			
-			//match the word in the sentence to the server response
-			if(array[arrayindex].word == data[0].word) {
-			
-				//flip the "returned" indicator to help signal when all results are returned
-				array[arrayindex].onlynounreturned = true;
-				
-				//go through data.results to check if the word is only a noun
-				data.forEach(function(dataitem, dataindex) {
-					if(data[dataindex].partOfSpeech!="noun") {
-						array[arrayindex].onlynoun = false;
-					}
-				});		
-			}
-		} else console.log("data[0] or data[0].word is undefined");
-
-	});
-	
-		//check if all the results are in
-		var allReturned = true;
-
-		for (var u = 0; u < array.length; u++) {
-
-			if (array[u].onlynounreturned == false) {allReturned = false;}
-			
-		}
-						
-	
-	
-	if(allReturned) {sentenceComplete(wordsInSentence);}
-}
-
-function getData(url, callback, optional) {
-
-			//migrate to Wordnik
-			console.log("getData called from: " + url + "\n with callback: " + callback);
-			var 
-			xhr = new XMLHttpRequest(),
-			data;
-			
-			xhr.open("GET", url, true);
-			xhr.send();
-			
-			xhr.onreadystatechange = function() {
-				if(xhr.readyState==4 && xhr.status==200) {
-					callback(JSON.parse(xhr.responseText), optional)
-				}			
-				if(xhr.readyState==4 && xhr.status!=200) {
-					alert("x");
-				}						
-			}
-	
-}
-
-function sentenceComplete(array) {
-	var allReturned = true;
-	//check if frequency and onlynoun are returned
-	for(var i = 0; i < array.length; i++) {
-		if(array[i].frequencyreturned == false || 
-			array[i].onlynounreturned == false) {
-				allReturned = false;}
-	}
-	
-	if(allReturned && !findAnswerCalled) {
-		findAnswerCalled = true;
-		findAnswer(array);}
-	
-}
-
-function findAnswer(array) {
-	var lowestFrequency = 100000,
-		rarestWord = "incandiferous";
-		
-	for(var i = 0; i < array.length; i ++) {
-		if(array[i].frequency < lowestFrequency && array[i].onlynoun) {
-			rarestWord = array[i].word;
-			lowestFrequency = array[i].frequency;
-		}		
-	}
-	
-	for(var i = 0; i < array.length; i ++) {
-		if(array[i].word == rarestWord) {
-			array[i].theanswer = true;
-			theAnswer = array[i];
-		}		
-	}
-	
-	//At this point the array is done. I have the word that should be tested.
-	console.log("Everythings done! ");
-	
-	sentenceToTest = sentenceToTest.replace(theAnswer.word, "-------");
-	document.getElementById("stem").innerHTML = sentenceToTest;
-	
-	//Move on to finding distractors
-	findDistractors(theAnswer);
-}

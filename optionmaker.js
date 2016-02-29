@@ -16,6 +16,8 @@ function clearScreen() {
 	optionD=undefined;
 	
 	//Clear DOM
+	document.getElementById("stem").innerHTML = "&nbsp;";
+	
 	document.getElementById("optionA").innerHTML = "(A)";
 	document.getElementById("optionB").innerHTML = "(B)";
 	document.getElementById("optionC").innerHTML = "(C)";
