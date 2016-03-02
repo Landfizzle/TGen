@@ -40,12 +40,12 @@ function clearScreen() {
 function findDistractors(answer) {
 		
 	//these should only be initialized the first time the function is called (with the correct answer)
-		var frequencyMax = answer.frequency + .25, 
-			frequencyMin = answer.frequency - .25, 
+		var frequencyMax = answer.frequency + 50, 
+			frequencyMin = 50, // It causes problems whenever this is above 50
 			lettersMax = answer.word.length + 2, 
 			lettersMin = answer.word.length - 2;
 			
-			//if(answer.frequency - 50 <= 50) {frequencyMin = 50;} else {frequencyMin = answer.frequency - 50;}
+			
 			//Searching for random results with only nouns and a frequency higher than 50 returns an empty array... seems like an API glitch
 			frequencyMin = 50;
 			if(answer.frequency + 50 <= 100) {frequencyMax = 100;} else {frequencyMax = answer.frequency + 50;}
@@ -53,8 +53,7 @@ function findDistractors(answer) {
 			if(answer.word.length - 2 <= 4) {lettersMin  = 4;} else {lettersMin = answer.word.length - 2;}
 			if(answer.word.length + 2 <= 6) {lettersMax  = 6;} else {lettersMax = answer.word.length + 2;}
 			
-			console.log(frequencyMax + " " + frequencyMin + " " + lettersMax + " " + lettersMin + " ");
-		
+			if(answer.word=="opportunities") {console.log(frequencyMax + " " + frequencyMin + " " + lettersMax + " " + lettersMin + " ");}
 		var url = "http://api.wordnik.com:80/v4/words.json/randomWords?hasDictionaryDef=true&includePartOfSpeech=noun&minCorpusCount=1&maxCorpusCount=-1&" + 
 			"minDictionaryCount=" + frequencyMin + 
 			"&maxDictionaryCount=" + frequencyMax + 
@@ -73,7 +72,7 @@ function assignOption(theOptions) {
 
 	//To do: Add a "Is it a good option?" check
 	
-	if(theOptions.length<3) {alert("There's not enough options"); console.log(theOptions); return;} //else {console.log(theOptions);}
+	if(theOptions.length<3) {console.log("there werent enough options returned. Trying next sentence"); findSentence(theList); return;} //else {console.log(theOptions);}
 	
 	//sinceoptions are returned alphabetically, this should randomize them
 	var count = theOptions.length;
@@ -159,28 +158,31 @@ function checkAnswer(clicked) {
 		case "A":
 			if(optionA==theAnswer.word){
 				document.getElementById("aResponse").innerHTML = "Correct!";
+				document.getElementById("start").disabled = false;
 				//reset
 			} else document.getElementById("aResponse").innerHTML = "Wrong";
 			break;
 		case "B":
 			if(optionB==theAnswer.word){
 				document.getElementById("bResponse").innerHTML = "Correct!";
+				document.getElementById("start").disabled = false;
 				//reset
 			} else document.getElementById("bResponse").innerHTML = "Wrong";
 			break;
 		case "C":
 			if(optionC==theAnswer.word){
 				document.getElementById("cResponse").innerHTML = "Correct!";
+				document.getElementById("start").disabled = false;
 				//reset
 			} else document.getElementById("cResponse").innerHTML = "Wrong";
 			break;
 		case "D":
 			if(optionD==theAnswer.word){
 				document.getElementById("dResponse").innerHTML = "Correct!";
+				document.getElementById("start").disabled = false;
 				//reset
 			} else document.getElementById("dResponse").innerHTML = "Wrong";
 			break;
-		
 	}		
 }
 

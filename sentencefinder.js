@@ -20,9 +20,15 @@ var findAnswerCalled = false;
 
 function mouseClick() {
 	
-	update("status", sentenceListIndex);
 	
-	if(sentenceListIndex == 0) {
+	document.getElementById("start").disabled = "true";
+	
+	if(theList.length > 0 && sentenceListIndex >= theList.length) {
+		alert("End of list. Page will refresh");
+		location.reload(true);
+		return;
+	}  else if(sentenceListIndex == 0) {
+		
 		getSentences();
 	}  else {
 		clearScreen();
@@ -30,18 +36,10 @@ function mouseClick() {
 	}
 	
 }
-
-function begin() {
-	clearScreen();
-	
-	
-	getSentences();
-	
-}
 		
 function getSentences () {
 	//NYT most popular from today
-	var url = "http://api.nytimes.com/svc/mostpopular/v2/mostviewed/all-sections/7.json?api-key=458160046a89adbe1794a152b13ef268:10:67481050";
+	var url = "http://api.nytimes.com/svc/mostpopular/v2/mostviewed/all-sections/1.json?api-key=458160046a89adbe1794a152b13ef268:10:67481050";
 	
 	getData(url, buildListOfSentences);
 
@@ -58,29 +56,36 @@ function buildListOfSentences(source) {
 	
 	if(theList!=undefined) {findSentence(theList);} else {alert("theList is empty");}
 	
-	console.log(theList);
 }
 
 function findSentence(listOfSentences) {
 	console.log("findSentence called with: " + listOfSentences);
 		
-	var theSentence = listOfSentences[sentenceListIndex];
+	if(sentenceListIndex >= theList.length) {
+		alert("End of list. Page will refresh.");
+		location.reload(true);
+		return;
+	}  else {
 	
-	clearScreen();
-	
-	sentenceListIndex++;
-	//check if it is one sentence and lacks excess punctuation. return false if so,array if its usable		
-	if(canUseSentence(theSentence)) {
-		//Convert my sentence into a form compatible with the Wordnik API
-		sentenceToTest = theSentence;
-		format(theSentence);
-		//attach metadata to the sentence (Frequency, onlynoun)
-		assignDataToWords(wordsInSentence);
-		return;} 
-		else {
-			console.log("sentence unusable, trying again");
-			
-			findSentence(listOfSentences);
+		var theSentence = listOfSentences[sentenceListIndex]; //change back to sentenceListIndex
+		
+		clearScreen();
+		
+		sentenceListIndex++;
+		
+		//check if it is one sentence and lacks excess punctuation. return false if so,array if its usable		
+		if(canUseSentence(theSentence)) {
+			//Convert my sentence into a form compatible with the Wordnik API
+			sentenceToTest = theSentence;
+			format(theSentence);
+			//attach metadata to the sentence (Frequency, onlynoun)
+			assignDataToWords(wordsInSentence);
+			return;} 
+			else {
+				console.log("sentence unusable, trying again");
+				
+				findSentence(listOfSentences);
+		}
 	}
 }
 
@@ -136,7 +141,8 @@ function format(sentence) {
 //One function to make all the API calls for necessary word info. (Frequency and if it is only a noun)
 
 function assignDataToWords(array) {
-	console.log("assignDataToWords called with " + array);
+	console.log("assignDataToWords called with \n");
+	console.log(array);
 	
 	//Get frequency. Im calling this with canonical turned off because  "pushed" != "push" and it causes problems with the checks. If I fixed that it would make it more accurate, though
 	for(var i = 0; i < wordsInSentence.length; i ++) {
@@ -191,7 +197,7 @@ function canUseSentence(string) {
 }
 
 function assignFrequency(data) {
-	console.log("createArray called (Probably because data was returned)");
+	console.log("assignFrequency called with: " + data);
 	var array = wordsInSentence;
 			
 	for (var i = 0; i < array.length; i++) {
@@ -216,32 +222,39 @@ function assignFrequency(data) {
 }
 
 function assignOnlyNoun(data) {
-	console.log("assignOnlyNoun called with: " + data[0].word);
 	
-	var array = wordsInSentence;
-	
-	array.forEach(function(arrayitem, arrayindex) {
-		
-		//make sure the result is not empty (Setup "else")
-		if(data[0]!=undefined&&data[0].word!=undefined) {
+	//Despite my sentence formatting, some words are still not playing nice with Wordnik (Like "will" surprisingly enough). This is a shotgun approach to weeding out those troublesome sentences.
+	if(data[0] == undefined) {
+		findSentence(theList); //restarts the process at the next sentence
+		return; 
+		} else {
+			console.log("assignOnlyNoun called with: " + data[0].word);
 			
-			//match the word in the sentence to the server response
-			if(array[arrayindex].word == data[0].word) {
 			
-				//flip the "returned" indicator to help signal when all results are returned
-				array[arrayindex].onlynounreturned = true;
+			var array = wordsInSentence;
+			
+			array.forEach(function(arrayitem, arrayindex) {
 				
-				//go through data.results to check if the word is only a noun
-				data.forEach(function(dataitem, dataindex) {
-					if(data[dataindex].partOfSpeech!="noun") {
-						array[arrayindex].onlynoun = false;
+				//make sure the result is not empty (Setup "else")
+				if(data[0]!=undefined&&data[0].word!=undefined) {
+					
+					//match the word in the sentence to the server response
+					if(array[arrayindex].word == data[0].word) {
+					
+						//flip the "returned" indicator to help signal when all results are returned
+						array[arrayindex].onlynounreturned = true;
+						
+						//go through data.results to check if the word is only a noun
+						data.forEach(function(dataitem, dataindex) {
+							if(data[dataindex].partOfSpeech!="noun") {
+								array[arrayindex].onlynoun = false;
+							}
+						});		
 					}
-				});		
-			}
-		} else console.log("data[0] or data[0].word is undefined");
+				} else console.log("data[0] or data[0].word is undefined");
 
-	});
-	
+			});
+		}
 		//check if all the results are in
 		var allReturned = true;
 
@@ -259,7 +272,7 @@ function assignOnlyNoun(data) {
 function getData(url, callback, optional) {
 
 			//migrate to Wordnik
-			console.log("getData called from: " + url + "\n with callback: " + callback);
+			console.log("getData called from: " + url + "\n with callback: " + arguments[1]);
 			var 
 			xhr = new XMLHttpRequest(),
 			data;
@@ -272,7 +285,8 @@ function getData(url, callback, optional) {
 					callback(JSON.parse(xhr.responseText), optional)
 				}			
 				if(xhr.readyState==4 && xhr.status!=200) {
-					alert("x");
+					alert("There was an error (Most likely a connection time out error). The page will refresh. Please try again.");
+					location.reload(true);
 				}						
 			}
 	
