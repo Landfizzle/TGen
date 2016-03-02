@@ -15,7 +15,7 @@
 			
 			button {text-align: left;width:200px;height:20px}
 			
-			stem {text-align: left;width:200px;height:20px}
+			.stem {position: absolute; left:220px; top:10px; width:200px; text-align: left; height:20px; font-family:"Arial"}
 		</style>
 
 	</head>
@@ -23,9 +23,9 @@
 	<body>
 	
 		<button id="start" class="button" style="text-align: center" onclick='mouseClick()'>Start</button>
-				
+				<br>
 		<div id="stem" class="stem"> &nbsp; </div>
-		
+		<br>
 		<button id="optionA" class="button" disabled="true" onclick="checkAnswer('A')">(A)</button>
 		<div id="aResponse" class="response"> &nbsp; </div>
 		
