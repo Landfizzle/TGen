@@ -1,53 +1,17 @@
-var theSentence,
-
-	optionA,
+var optionA,
 	optionB,
 	optionC,
 	optionD;
-
-function clearScreen() {
-	
-	//initialize variables
-	findAnswerCalled = false;
-	
-	optionA=undefined;
-	optionB=undefined;
-	optionC=undefined;
-	optionD=undefined;
-	
-	//Clear DOM
-	document.getElementById("stem").innerHTML = "&nbsp;";
-	
-	document.getElementById("optionA").innerHTML = "(A)";
-	document.getElementById("optionB").innerHTML = "(B)";
-	document.getElementById("optionC").innerHTML = "(C)";
-	document.getElementById("optionD").innerHTML = "(D)";
-	
-	document.getElementById("optionA").disabled = true;
-	document.getElementById("optionB").disabled = true;
-	document.getElementById("optionC").disabled = true;
-	document.getElementById("optionD").disabled = true;
-	
-	document.getElementById("aResponse").innerHTML = "&nbsp;";
-	document.getElementById("bResponse").innerHTML = "&nbsp;";
-	document.getElementById("cResponse").innerHTML = "&nbsp;";
-	document.getElementById("dResponse").innerHTML = "&nbsp;";
-	
-	//Format the sentence for processing
-
-}
 	
 function findDistractors(answer) {
 		
-	//these should only be initialized the first time the function is called (with the correct answer)
+		//these should only be initialized the first time the function is called (with the correct answer)
+		//They establish the parameters for finding random nouns
 		var frequencyMax = answer.frequency + 50, 
-			frequencyMin = 50, // It causes problems whenever this is above 50
+			frequencyMin = 50, // It causes problems with the API whenever this is above 50
 			lettersMax = answer.word.length + 2, 
 			lettersMin = answer.word.length - 2;
-			
-			
-			//Searching for random results with only nouns and a frequency higher than 50 returns an empty array... seems like an API glitch
-			frequencyMin = 50;
+				
 			if(answer.frequency + 50 <= 100) {frequencyMax = 100;} else {frequencyMax = answer.frequency + 50;}
 			
 			if(answer.word.length - 2 <= 4) {lettersMin  = 4;} else {lettersMin = answer.word.length - 2;}
@@ -65,16 +29,19 @@ function findDistractors(answer) {
 
 }
 
-//assign options to ABCD
+//assign options (The 3 incorrect, random nouns) to ABCD
 	
 function assignOption(theOptions) {
 	
 
-	//To do: Add a "Is it a good option?" check
+
+	if(theOptions.length<3) {
+		console.log("there werent enough options returned. Trying next sentence"); 
+		findSentence(theList); 
+		return;
+	}
 	
-	if(theOptions.length<3) {console.log("there werent enough options returned. Trying next sentence"); findSentence(theList); return;} //else {console.log(theOptions);}
-	
-	//sinceoptions are returned alphabetically, this should randomize them
+	//sinceoptions are returned alphabetically, this should randomize them. Otherwise, the options will be limited to words that start with a or b, or some other "early" letter
 	var count = theOptions.length;
 
 	var num1 = Math.floor(Math.random() * count),
@@ -83,10 +50,6 @@ function assignOption(theOptions) {
 
 	while(num2 == num1) {num2 = Math.floor(Math.random() * count);}
 	while(num3 == num1 || num3 == num2) {num3 = Math.floor(Math.random() * count);}
-	
-	//console.log(Math.floor(Math.random*count));
-	
-	
 	
 	optionA = theAnswer.word;
 	optionB = theOptions[num1].word;
@@ -98,6 +61,7 @@ function assignOption(theOptions) {
 }
 
 function randomizeOptions() {
+	
 	console.log("randomizeOptions() called");
 	var A, B, C, D, spin, answer, finding = "A";
 	
@@ -135,56 +99,9 @@ function randomizeOptions() {
 
 }
 
-function printToScreen() {
-		
-		document.getElementById("optionA").innerHTML = "(A) " + optionA;
-		document.getElementById("optionA").disabled = false;
-		
-		document.getElementById("optionB").innerHTML = "(B) " + optionB;
-		document.getElementById("optionB").disabled = false;
-		
-		document.getElementById("optionC").innerHTML = "(C) " + optionC;
-		document.getElementById("optionC").disabled = false;
-		
-		document.getElementById("optionD").innerHTML = "(D) " + optionD;
-		document.getElementById("optionD").disabled = false;
-		
-				
-}
 
 
-function checkAnswer(clicked) {
-	switch(clicked) {
-		case "A":
-			if(optionA==theAnswer.word){
-				document.getElementById("aResponse").innerHTML = "Correct!";
-				document.getElementById("start").disabled = false;
-				//reset
-			} else document.getElementById("aResponse").innerHTML = "Wrong";
-			break;
-		case "B":
-			if(optionB==theAnswer.word){
-				document.getElementById("bResponse").innerHTML = "Correct!";
-				document.getElementById("start").disabled = false;
-				//reset
-			} else document.getElementById("bResponse").innerHTML = "Wrong";
-			break;
-		case "C":
-			if(optionC==theAnswer.word){
-				document.getElementById("cResponse").innerHTML = "Correct!";
-				document.getElementById("start").disabled = false;
-				//reset
-			} else document.getElementById("cResponse").innerHTML = "Wrong";
-			break;
-		case "D":
-			if(optionD==theAnswer.word){
-				document.getElementById("dResponse").innerHTML = "Correct!";
-				document.getElementById("start").disabled = false;
-				//reset
-			} else document.getElementById("dResponse").innerHTML = "Wrong";
-			break;
-	}		
-}
+
 
 
 

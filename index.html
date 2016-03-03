@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 <html>
@@ -7,15 +8,17 @@
 		</title>
 		<script type="text/javascript" src="optionmaker.js"></script>
 		<script type="text/javascript" src="sentencefinder.js"></script>
+		<script type="text/javascript" src="APIcalls.js"></script>
+		<script type="text/javascript" src="DOMstuff.js"></script>
 		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 		<meta charset="utf-8">
 		
 		<style>
-			response {text-align: left;width:200px;height:20px}
+			response {text-align: left;width:200px;height:20px;font-family:"Times New Roman"}
 			
-			button {text-align: left;width:200px;height:20px}
+			button {text-align: left;width:200px;height:20px;font-family:"Times New Roman"}
 			
-			.stem {position: absolute; left:220px; top:10px; width:200px; text-align: left; height:20px; font-family:"Arial"}
+			.stem {position: absolute; left:220px; top:10px; width:380px; text-align: left; height:20px; font-family:"Arial"}
 		</style>
 
 	</head>
@@ -38,12 +41,12 @@
 		<button id="optionD" class="button" disabled="true" onclick="checkAnswer('D')">(D)</button>
 		<div id="dResponse" class="response"> &nbsp; </div>
 		
-		<div id="status"> </div>
+		<br>
 	
 		<div id="explanation">This page creates questions similar to questions found on various English tests. <a href="https://www.ets.org/Media/Tests/TOEIC/pdf/TOEIC_LR_sample_tests.pdf" target="_blank">See TOEIC Part 5 for an example.</a> Use it like this:
 			<ol>
 				<li>Click start.</li>
-				<li>Wait. It can take a little while to fetch the results (Maybe 15 seconds) </li>
+				<li>Wait. It can take a little while to fetch the results (Maybe 15 seconds). </li>
 				<li>Choose the correct answer. </li>
 				<li>Repeat</li>
 			</ol>
