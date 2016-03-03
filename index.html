@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title> 
+			TGen 5
+		</title>
+		<script type="text/javascript" src="optionmaker.js"></script>
+		<script type="text/javascript" src="sentencefinder.js"></script>
+		<script type="text/javascript" src="APIcalls.js"></script>
+		<script type="text/javascript" src="DOMstuff.js"></script>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+		<meta charset="utf-8">
+		
+		<style>
+			response {text-align: left;width:200px;height:20px;font-family:"Times New Roman"}
+			
+			button {text-align: left;width:200px;height:20px;font-family:"Times New Roman"}
+			
+			.stem {position: absolute; left:220px; top:10px; width:380px; text-align: left; height:20px; font-family:"Arial"}
+		</style>
+
+	</head>
+	
+	<body>
+	
+		<button id="start" class="button" style="text-align: center" onclick='mouseClick()'>Start</button>
+				<br>
+		<div id="stem" class="stem"> &nbsp; </div>
+		<br>
+		<button id="optionA" class="button" disabled="true" onclick="checkAnswer('A')">(A)</button>
+		<div id="aResponse" class="response"> &nbsp; </div>
+		
+		<button id="optionB" class="button" disabled="true" onclick="checkAnswer('B')">(B)</button>
+		<div id="bResponse" class="response"> &nbsp; </div>
+		
+		<button id="optionC" class="button" disabled="true" onclick="checkAnswer('C')">(C)</button>
+		<div id="cResponse" class="response"> &nbsp; </div>
+		
+		<button id="optionD" class="button" disabled="true" onclick="checkAnswer('D')">(D)</button>
+		<div id="dResponse" class="response"> &nbsp; </div>
+		
+		<br>
+	
+		<div id="explanation">This page creates questions similar to questions found on various English tests. <a href="https://www.ets.org/Media/Tests/TOEIC/pdf/TOEIC_LR_sample_tests.pdf" target="_blank">See TOEIC Part 5 for an example.</a> Use it like this:
+			<ol>
+				<li>Click start.</li>
+				<li>Wait. It can take a little while to fetch the results (Maybe 15 seconds). </li>
+				<li>Choose the correct answer. </li>
+				<li>Repeat</li>
+			</ol>
+			The sentences are chosen from the <a href="http://developer.nytimes.com/" target="_blank">NYTimes API</a>, and the individual words are processed or retrieved from <a href="http://developer.wordnik.com/" target="_blank">Wordnik API</a>. The logic is basically: Find the rarest word in the sentence. If it is a noun and has no alternative definitions, then it will be the answer. Then 3 random nouns are chosen of similar rarity and length.
+			<br><br>
+			Known issues
+			<ul>
+				<li>The wrong answers are randomly generated. Sometimes the "wrong" answer makes sense in the sentence.</li>
+				<li>The wrong answers are never plural, which sometimes makes the correct answer quite obvious.</li>
+			</li>	
+			
+		</div>
+				
+		
+	</body>
+</html>
+			
