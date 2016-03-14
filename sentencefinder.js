@@ -4,20 +4,17 @@ var wordsInSentence = [],
 	sentenceToTest = "Incandiferous",
 	findAnswerCalled;
 
-
-
-
-function buildListOfSentences(source) {
+var buildListOfSentences = function(source) {
 	console.log("buildListOfSentences() called");
 	
-	//theList = [];
-	
-	source.results.forEach(function(item, index) {
-		theList.push(item.abstract);
-	});
+	theList = source.results.reduce(function(newArray, entry) {
+		newArray.push(entry.abstract);
+		return newArray;
+	}, []);
+
 	
 	//In case a result is not returned from NYT
-	if(theList!=undefined) {
+	if(theList!==undefined) {
 		findSentence(theList);
 	} else {
 		alert("theList is empty. This means the NYT API call was unsuccessful. Page will refresh. Try again."); 
@@ -27,7 +24,7 @@ function buildListOfSentences(source) {
 	
 }
 
-function findSentence(listOfSentences) {
+var findSentence = function(listOfSentences) {
 	console.log("findSentence called");
 		
 	if(sentenceListIndex >= theList.length) {
@@ -62,7 +59,7 @@ function findSentence(listOfSentences) {
 
 
 //Convert theSentence into a form compatible with the Wordnik API
-function format(sentence) {
+var format = function(sentence) {
 	console.log("format() called with: " + sentence);
 	
 	
@@ -70,15 +67,16 @@ function format(sentence) {
 	wordsInSentence = sentence.split(" ");
 	
 	//Turn each item into an object with important characteristics for each word
-	wordsInSentence.forEach(function(item, index) {
-			wordsInSentence[index] = {"position": index,
+	wordsInSentence = wordsInSentence.map(function(item, index) {
+			return {"position": index,
 			"word": item,
 			"onlynoun": true,
 			"frequency": 0,
 			"frequencyreturned": false,
 			"onlynounreturned": false,
 			"theanswer": false
-	}});
+			};
+	});
 	
 		//Punctuation handling on the Wordnik API is inconsistent. I can't just strip off all the punctuation, so these checks should fix those inconsistencies. The trickiest cases are apostrophes. Possessive apostrophes are not returned and can render a word unreadable by the API, and contracting apostrophes are necessary to identify the word. (Compare "party's" and "won't") 
 		
@@ -94,7 +92,7 @@ function format(sentence) {
 
 
 //Try to determine if the sentence will work with the program (Both my functions and Wordnik)
-function canUseSentence(string) {
+var canUseSentence = function(string) {
 	
 	console.log("canUseSentence called with: " + string);
 	var theLetters = string.toLowerCase().split(""),
@@ -120,10 +118,36 @@ function canUseSentence(string) {
 	
 }
 
-function assignFrequency(data) {
+var assignFrequency = function(data) {
 	console.log("assignFrequency called");
+
 	var array = wordsInSentence;
+	
+	wordsInSentence.forEach(function(item) {
+		if(item.word == data.word) {
+			item.frequency = data.totalCount;
+			item.frequencyreturned = true;
+		}
 			
+		//check if all the results are in
+		var allReturned = true;
+
+		wordsInSentence.forEach(function(item2) {
+			if (item2.frequencyreturned == false) {
+				allReturned = false;}
+			}
+		);
+		
+		//If theyre all returned, check if assignOnlyNoun is also complete
+		if(allReturned) {
+			sentenceComplete(wordsInSentence);}	
+		}
+						
+	);
+};
+	
+
+	/*
 	for (var i = 0; i < array.length; i++) {
 		//match the returned data to the word in the sentence then update its data
 		if(array[i].word == data.word) {
@@ -132,82 +156,83 @@ function assignFrequency(data) {
 			array[i].frequency = data.totalCount;
 			
 		}
-	
-		//check if all the results are in
-		var allReturned = true;
+	*/
 
-		for (var u = 0; u < array.length; u++) {
-			if (array[u].frequencyreturned == false) {allReturned = false;}
-		}
-						
-	}
-	
-	//If theyre all returned, check if assignOnlyNoun is also complete
-	if(allReturned) {sentenceComplete(wordsInSentence);}
-}
+var assignOnlyNoun = function(data) {
 
-function assignOnlyNoun(data) {
-	
 	//Despite my sentence formatting, some words are still not playing nice with Wordnik (Like "will" surprisingly enough). This is a shotgun approach to weeding out those troublesome sentences. If for some reason a word returns no data, the sentence is disqualified
 	if(data[0] == undefined) {
 		findSentence(theList); //restarts the process at the next sentence
 		return; 
-		} else {
-			console.log("assignOnlyNoun called");
-			
-			var array = wordsInSentence;
-			
-			array.forEach(function(arrayitem, arrayindex) {
+	} 
+	else {
+		console.log("assignOnlyNoun called");
+		
+		var array = wordsInSentence;
+		
+		
+		wordsInSentence.forEach(function(sentenceitem) {
+				
+				//match the word in the sentence to the server response
+				if(sentenceitem.word === data[0].word) {
+				
+					//flip the "returned" indicator to help signal when all results are returned
+					sentenceitem.onlynounreturned = true;
 					
-					//match the word in the sentence to the server response
-					if(array[arrayindex].word == data[0].word) {
-					
-						//flip the "returned" indicator to help signal when all results are returned
-						array[arrayindex].onlynounreturned = true;
-						
-						//go through data.results to check if the word is only a noun
-						data.forEach(function(dataitem, dataindex) {
-							if(data[dataindex].partOfSpeech!="noun") {
-								array[arrayindex].onlynoun = false;
-							}
-						});		
-					}
+					//go through data.results to check if the word is only a noun
+					data.forEach(function(dataitem) {
+						if(dataitem.partOfSpeech!=="noun") {
+							sentenceitem.onlynoun = false;
+						}
+					});		
+				}
 
-			});
-		}
+		});
+	}
+
+
 		//check if all the results are in
 		var allReturned = true;
-
-		for (var u = 0; u < array.length; u++) {
-
-			if (array[u].onlynounreturned == false) {allReturned = false;}
-			
-		}
+		
+		wordsInSentence.forEach(function(item) {
+			if (item.onlynounreturned === false) {
+				allReturned = false;
+			}
+		});
 						
 	
 	//If an "onlynoun" word was not found, move on to the next sentence. If it was found, call sentenceComplete to check if frequency check is complete
 	var thereIsAnOnlyNoun = false;
 	
 	if(allReturned) {
-		for (var u = 0; u < array.length; u++) {
+		wordsInSentence.forEach(function(item) {
+			if (item.onlynoun === true) {
+				thereIsAnOnlyNoun = true;
+			}
+		});
+		
 
-			if (array[u].onlynoun == true) {thereIsAnOnlyNoun = true;}
-			
+		if(thereIsAnOnlyNoun) {
+			sentenceComplete(wordsInSentence);
+			} 
+		else {
+			findSentence(theList);
+			}
 		}
-		if(thereIsAnOnlyNoun) {sentenceComplete(wordsInSentence);} else {findSentence(theList);}
-	}
-}
+};
 
 
 
-function sentenceComplete(array) {
+var sentenceComplete = function(array) {
 	var allReturned = true;
 	//check if frequency and onlynoun are returned
-	for(var i = 0; i < array.length; i++) {
-		if(array[i].frequencyreturned == false || 
-			array[i].onlynounreturned == false) {
-				allReturned = false;}
-	}
+	
+	array.forEach(function(item) {
+		if(item.frequencyreturned === false || item.onlynounreturned === false) {
+			allReturned = false;
+		}
+	});
+
 	
 	//findAnswerCalled prevents the options from being updated too many times on the DOM
 	if(allReturned && !findAnswerCalled) {
@@ -215,26 +240,26 @@ function sentenceComplete(array) {
 		findAnswer(array);
 	}
 	
-}
+};
 
-function findAnswer(array) {
+var findAnswer = function(array) {
 	var lowestFrequency = 100000,
 		rarestWord = "incandiferous";
-	
+
 	//Find the word with lowest frequency that is also onlynoun. It will become the answer
-	for(var i = 0; i < array.length; i ++) {
-		if(array[i].frequency < lowestFrequency && array[i].onlynoun) {
-			rarestWord = array[i].word;
-			lowestFrequency = array[i].frequency;
+	array.forEach(function(item) {
+		if(item.frequency < lowestFrequency && item.onlynoun) {
+			rarestWord = item.word;
+			lowestFrequency = item.frequency;
 		}		
-	}
+	});
 	
-	for(var i = 0; i < array.length; i ++) {
-		if(array[i].word == rarestWord) {
-			array[i].theanswer = true;
-			theAnswer = array[i];
+	array.forEach(function(item) {
+		if(item.word === rarestWord) {
+			item.theanswer = true;
+			theAnswer = item;
 		}		
-	}
+	});
 	
 	//At this point the array is done. I have the word that should be tested.
 	console.log("Everythings done! ");
@@ -245,4 +270,4 @@ function findAnswer(array) {
 	
 	//Move on to finding distractors
 	findDistractors(theAnswer);
-}
+};

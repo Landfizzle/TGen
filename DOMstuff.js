@@ -1,18 +1,18 @@
 //Change text of a DOM element
-function update(name, toDisplay) {
+var update = function(name, toDisplay) {
 	document.getElementById(name).innerHTML = toDisplay;
-}
+};
 
-function enable(name) {
+var enable = function(name) {
 	document.getElementById(name).disabled = false;
-}
+};
 
-function disable(name) {
+var disable = function(name) {
 	document.getElementById(name).disabled = true;
-}
+};
 
 //On clicking the start button
-function mouseClick() {
+var mouseClick = function() {
 	
 	//Turn off the button to prevent button mashing and prematurely incrementing sentenceListIndex
 	disable("start");
@@ -25,7 +25,7 @@ function mouseClick() {
 	}  
 	
 	//If it is the first click, build theList of sentences
-	else if(sentenceListIndex == 0) {
+	else if(sentenceListIndex === 0) {
 		getSentences();
 	}  
 	
@@ -35,10 +35,10 @@ function mouseClick() {
 		findSentence(theList);
 	}
 	
-}
+};
 		
 
-function clearScreen() {
+var clearScreen = function() {
 	
 	//initialize variables
 	findAnswerCalled = false;
@@ -66,10 +66,10 @@ function clearScreen() {
 	update("cResponse", "&nbsp;");
 	update("dResponse", "&nbsp;");
 	
-}
+};
 
 //Put the options on the buttons and enable them
-function printToScreen() {
+var printToScreen = function() {
 				
 		update("optionA", "(A) " + optionA);
 		enable("optionA");
@@ -82,40 +82,52 @@ function printToScreen() {
 		
 		update("optionD", "(D) " + optionD);
 		enable("optionD");
-}
+};
 
 
 //On clicking a button A-D, determine if the selection was correct or wrong
-function checkAnswer(clicked) {
-	switch(clicked) {
-		case "A":
-			if(optionA==theAnswer.word){				
-				update("aResponse", "Correct!");
-				enable("start");					
-				//reset
-			} else update("aResponse", "Wrong");
-			break;
-		case "B":
-			if(optionB==theAnswer.word){				
-				update("bResponse", "Correct!");
-				enable("start");
-				//reset
-			} else update("bResponse", "Wrong");
-			break;
-		case "C":
-			if(optionC==theAnswer.word){				
-				update("cResponse", "Correct!");
-				enable("start");
-				//reset
-			} else update("cResponse", "Wrong");
-			break;
-		case "D":
-			if(optionD==theAnswer.word){				
-				update("dResponse", "Correct!");
-				enable("start");
-				//reset
-			} else update("dResponse", "Wrong");
-			break;
-	}		
-}
+var checkAnswer = function(clicked) {
+	
+	//this object literal method replaced my original switch statement
+	var buttons = {
+		'A': function() {
+			if(optionA===theAnswer.word) {
+				update('aResponse', "Correct!");
+				enable('start');
+			}
+			else {
+				update('aResponse', "Wrong");
+			}
+		},
+		'B': function() {
+			if(optionB===theAnswer.word) {
+				update('bResponse', "Correct!");
+				enable('start');
+			}
+			else {
+				update('bResponse', "Wrong");
+			}
+		},
+		'C': function() {
+			if(optionC===theAnswer.word) {
+				update('cResponse', "Correct!");
+				enable('start');
+			}
+			else {
+				update('cResponse', "Wrong");
+			}
+		},
+		'D': function() {
+			if(optionD===theAnswer.word) {
+				update('dResponse', "Correct!");
+				enable('start');
+			}
+			else {
+				update('dResponse', "Wrong");
+			}
+		}
+	};
+	
+	buttons[clicked]();
+};
 
