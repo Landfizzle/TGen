@@ -1,5 +1,3 @@
-# TGen
-
 ![picture alt](http://i.imgur.com/Mte6Tkp.png?1)
 - - - - -
 TGen creates questions similar to questions found on various English tests. 
