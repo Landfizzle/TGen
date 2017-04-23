@@ -5,7 +5,7 @@ var getSentences = function () {
 	console.log("getSentences called");
 	
 	//NYT most popular from today
-	url = "https://api.nytimes.com/svc/mostpopular/v2/mostviewed/all-sections/1.json?api-key=458160046a89adbe1794a152b13ef268:10:67481050";
+	url = "http://api.nytimes.com/svc/mostpopular/v2/mostviewed/all-sections/1.json?api-key=458160046a89adbe1794a152b13ef268:10:67481050";
 	
 	getData(url, buildListOfSentences);
 };
@@ -16,7 +16,7 @@ var assignDataToWords = function() {
 	//Get frequency. Im calling this with canonical turned off because  "pushed" != "push" and it causes problems with the checks. If I fixed that it would make it more accurate, though
 	wordsInSentence.forEach(function(item) {
 		url = 
-		"https://api.wordnik.com:80/v4/word.json/" + 
+		"http://api.wordnik.com:80/v4/word.json/" + 
 		item.word + 
 		"/frequency?useCanonical=false&startYear=1960&endYear=2012&api_key=" + 
 		WORDNIK_API_KEY;
@@ -29,7 +29,7 @@ var assignDataToWords = function() {
 	wordsInSentence.forEach(function(item) {
 		
 		url = 
-		"https://api.wordnik.com:80/v4/word.json/" + 
+		"http://api.wordnik.com:80/v4/word.json/" + 
 		item.word + 		"/definitions?limit=200&includeRelated=false&sourceDictionaries=wiktionary&useCanonical=false&includeTags=false&api_key=" + 
 		WORDNIK_API_KEY;
 
